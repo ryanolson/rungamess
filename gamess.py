@@ -3,6 +3,8 @@
 # Python program to run MPI programs.
 #
 
+import os
+import sys
 import optparse
 formatter = optparse.IndentedHelpFormatter(max_help_position=40)
 parser = optparse.OptionParser(formatter=formatter)
@@ -19,12 +21,57 @@ env["I_MPI_NETMASK"] = "ib0"
 #env["CUDA_CACHE_DISABLE"] = "1"
 #env["CUDA_CACHE_PATH"] = "/tmp/$USER-ptx-cache"
 
+#
+# defaults should be picked up in order from:
+# 1) ~/.gamessrc
+# 2) environmental variables
+# 3) .gamessrc in the current directory
+#
+# Default (value, source) should be kept and printed if 
+# verbose output is requsted.
+#
+# Command line arguments can override any default setting
+#
+
+if 'GAMESS_PATH' not in os.environ:
+   sys.exit("""
+GAMESS_PATH not set.
+
+gamess.py expects the following directory structure:
+$GAMESS_PATH
+|- bin
+|- auxdata
+
+""")
+else:
+   default_path = os.environ['GAMESS_PATH']
+
+if 'GAMESS_WDIR' not in os.environ:
+   sys.exit("""
+GAMESS_WDIR is not set.
+
+Please set the GAMESS_WDIR environment variable to a suitable
+scratch filesystem for the temporary runtime files used by GAMESS.
+This path should be readable and writeable by the user executing
+gamess.py.
+
+Note: every GAMESS instance will create a unique directory in $GAMESS_WDIR.
+If $GAMESS_WDIR is a global path for all users, care should be taken
+such that the umask is set appropriately to provide access protection for
+individual user directories.
+
+""")
+else:
+   default_wdir = os.environ['GAMESS_WDIR']
+   
+
 # set defaults here
-parser.set_defaults(gamess="$PWD/gamess.serial.x")
-parser.set_defaults(gamess_ericfmt="$PWD/auxdata/ericfmt.dat")
-#parser.set_defaults(mpi="mpich")
-parser.set_defaults(wdir="$HOME/scratch/$USER")
+parser.set_defaults(gamess_path=default_path)
+parser.set_defaults(gamess=default_path+"/gamess.x")
+parser.set_defaults(gamess_ericfmt=default_path+"/auxdata/ericfmt.dat")
+parser.set_defaults(wdir=default_wdir)
 parser.set_defaults(gamess_server=False)
+#parser.set_defaults(mpi="mpich")
 #parser.set_defaults(rsh="ssh") # enable to use rsh to set up job
 
 # PBS resource list template
